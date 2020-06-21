@@ -10,7 +10,7 @@ public class Tin {
 
         if (args.length == 0) {
             VcConnectionUi vcConnectionUi = new VcConnectionUi();
-            JFrame appUi = vcConnectionUi.createUI();
+            //JFrame appUi = vcConnectionUi.createUI();
         }
 
     }
