@@ -1,9 +1,6 @@
 package info.ivgivanov.tin.ui;
 
-import com.vmware.vim25.InvalidLocaleFaultMsg;
-import com.vmware.vim25.InvalidLoginFaultMsg;
-import com.vmware.vim25.RuntimeFaultFaultMsg;
-import com.vmware.vim25.VimPortType;
+import com.vmware.vim25.*;
 import info.ivgivanov.tin.VcConnector;
 
 import javax.swing.*;
@@ -42,8 +39,13 @@ public class VcConnectionUi {
                 try {
                     VimPortType vimPort = vcConnector.login();
                     appUi.setVisible(false);
+                    ManagedObjectReference serviceInstance = new ManagedObjectReference();
+                    serviceInstance.setType("ServiceInstance");
+                    serviceInstance.setValue("ServiceInstance");
+                    ServiceContent serviceContent = vimPort.retrieveServiceContent(serviceInstance);
                     MainView mainView = new MainView();
                     mainView.setVimPort(vimPort);
+                    mainView.setServiceContent(serviceContent);
                     mainView.createUI();
                 } catch (KeyManagementException keyManagementException) {
                     keyManagementException.printStackTrace();
