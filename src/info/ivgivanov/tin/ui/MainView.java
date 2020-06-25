@@ -34,7 +34,9 @@ public class MainView {
         executeMethod.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-
+                if (executeMethod.getText().equals("Copy to...")) {
+                    ConnectTargetVc connectTargetVc = new ConnectTargetVc();
+                }
             }
         });
         actionsList.addActionListener(new ActionListener() {

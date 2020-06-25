@@ -6,12 +6,10 @@ import info.ivgivanov.tin.VcConnector;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
-public class VcConnectionUi {
+public class ConnectTargetVc {
     private JPanel initView;
     private JLabel vcenterAddress;
     private JTextField vcAddrInput;
@@ -22,7 +20,7 @@ public class VcConnectionUi {
     private JTextField vcUsrNameInput;
     private JLabel usernameLabel;
 
-    public VcConnectionUi() {
+    public ConnectTargetVc() {
         JFrame appUi = createUI();
         btnConnect.addActionListener(new ActionListener() {
             @Override
@@ -45,10 +43,8 @@ public class VcConnectionUi {
                     serviceInstance.setType("ServiceInstance");
                     serviceInstance.setValue("ServiceInstance");
                     ServiceContent serviceContent = vimPort.retrieveServiceContent(serviceInstance);
-                    MainView mainView = new MainView();
-                    mainView.setVimPort(vimPort);
-                    mainView.setServiceContent(serviceContent);
-                    mainView.createUI();
+
+                    vimPort.logout(serviceContent.getSessionManager());
 
                 }  catch (KeyManagementException keyManagementException) {
                     keyManagementException.printStackTrace();
@@ -78,5 +74,4 @@ public class VcConnectionUi {
 
         return frame;
     }
-
 }

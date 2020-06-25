@@ -3,7 +3,6 @@ package info.ivgivanov.tin;
 import com.vmware.vim25.*;
 
 import javax.xml.ws.BindingProvider;
-import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
