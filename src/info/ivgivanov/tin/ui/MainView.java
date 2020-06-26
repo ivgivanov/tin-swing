@@ -2,10 +2,10 @@ package info.ivgivanov.tin.ui;
 
 import com.vmware.vim25.*;
 import info.ivgivanov.tin.AccessControlManager;
-import info.ivgivanov.tin.VcInvenotryCollector;
+import info.ivgivanov.tin.VcConnection;
+import info.ivgivanov.tin.VcInventoryCollector;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -13,30 +13,26 @@ import java.awt.event.WindowEvent;
 import java.util.List;
 
 public class MainView {
+    private VcConnection vcConnection;
     private JPanel panel1;
     private JLabel versionBuild;
     private JComboBox actionsList;
     private JButton executeMethod;
     private JList vcRoles;
-    private VimPortType vimPort;
 
-    public ServiceContent getServiceContent() {
-        return serviceContent;
+    public VcConnection getVcConnection() {
+        return vcConnection;
     }
 
-    public void setServiceContent(ServiceContent serviceContent) {
-        this.serviceContent = serviceContent;
+    private void setVcConnection(VcConnection vcConnection) {
+        this.vcConnection = vcConnection;
     }
 
-    private ServiceContent serviceContent;
-
-    public MainView() {
+    public MainView(VcConnection vcConnection) {
+        this.setVcConnection(vcConnection);
         executeMethod.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (executeMethod.getText().equals("Copy to...")) {
-                    ConnectTargetVc connectTargetVc = new ConnectTargetVc();
-                }
             }
         });
         actionsList.addActionListener(new ActionListener() {
@@ -47,9 +43,9 @@ public class MainView {
                     case "Copy vCenter Role":
                         ((DefaultListModel)vcRoles.getModel()).clear();
                         executeMethod.setVisible(false);
-                        AccessControlManager acm = new AccessControlManager();
+                        AccessControlManager acm = new AccessControlManager(vcConnection);
                         try {
-                            List<AuthorizationRole> roles = acm.getRoles(getVimPort(), getServiceContent());
+                            List<AuthorizationRole> roles = acm.getRoles();
                             for (AuthorizationRole role : roles) {
                                 ((DefaultListModel)vcRoles.getModel()).addElement(role.getName());
                             }
@@ -64,8 +60,8 @@ public class MainView {
                     case "Check vMotion Compatibility":
                         ((DefaultListModel)vcRoles.getModel()).clear();
                         executeMethod.setVisible(false);
-                        VcInvenotryCollector vcInvenotryCollector = new VcInvenotryCollector();
-                        for  (String clusterName : vcInvenotryCollector.getClusterNames(getVimPort(),getServiceContent())) {
+                        VcInventoryCollector vcInventoryCollector = new VcInventoryCollector(vcConnection);
+                        for  (String clusterName : vcInventoryCollector.getClusterNames()) {
                             ((DefaultListModel)vcRoles.getModel()).addElement(clusterName);
                         }
                         executeMethod.setText("Check vMotion...");
@@ -80,16 +76,6 @@ public class MainView {
                 vcRoles.setVisible(true);
             }
         });
-    }
-
-    public VimPortType getVimPort() {
-
-        return vimPort;
-    }
-
-    public void setVimPort(VimPortType vimPort) {
-
-        this.vimPort = vimPort;
     }
 
     public JFrame createUI() {
@@ -107,6 +93,9 @@ public class MainView {
 
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+
+        VimPortType vimPort = vcConnection.getVimPort();
+        ServiceContent serviceContent = vcConnection.getServiceContent();
 
         versionBuild.setText(" vCenter version: "+serviceContent.getAbout().getVersion()+", build "+serviceContent.getAbout().getBuild());
 

@@ -1,42 +1,44 @@
 package info.ivgivanov.tin;
 
 import com.vmware.vim25.*;
+import info.ivgivanov.tin.ui.VcConnectionUi;
 
 import javax.xml.ws.BindingProvider;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
-public class VcConnector {
+public class VcConnection {
     private String address;
-    private String username;
-    private String password;
+    private VimPortType vimPort;
+    private ServiceContent serviceContent;
 
     public String getAddress() {
         return address;
     }
 
-    public void setAddress(String address) {
+    private void setAddress(String address) {
         this.address = address;
     }
 
-    public String getUsername() {
-        return username;
+    public VimPortType getVimPort() {
+        return vimPort;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    private void setVimPort(VimPortType vimPort) {
+        this.vimPort = vimPort;
     }
 
-    public String getPassword() {
-        return password;
+    public ServiceContent getServiceContent() {
+        return serviceContent;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    private void setServiceContent(ServiceContent serviceContent) {
+        this.serviceContent = serviceContent;
     }
 
-    public VimPortType login () throws KeyManagementException, NoSuchAlgorithmException, InvalidLocaleFaultMsg, InvalidLoginFaultMsg, RuntimeFaultFaultMsg {
+    public VcConnection(String address, String username, String password) throws RuntimeFaultFaultMsg, InvalidLoginFaultMsg, InvalidLocaleFaultMsg, KeyManagementException, NoSuchAlgorithmException {
+
         VimService vimService = new VimService();
         VimPortType vimPort = vimService.getVimPort();
 
@@ -53,8 +55,10 @@ public class VcConnector {
 
         ServiceContent serviceContent = vimPort.retrieveServiceContent(serviceInstance);
         vimPort.login(serviceContent.getSessionManager(), username, password, null);
+        this.setAddress(address);
+        this.setVimPort(vimPort);
+        this.setServiceContent(serviceContent);
 
-        return vimPort;
     }
 
 }

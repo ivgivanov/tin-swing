@@ -1,13 +1,11 @@
 package info.ivgivanov.tin.ui;
 
 import com.vmware.vim25.*;
-import info.ivgivanov.tin.VcConnector;
+import info.ivgivanov.tin.VcConnection;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
@@ -32,35 +30,24 @@ public class VcConnectionUi {
                 char[] vcPwdCh = vcPwdInput.getPassword();
                 String vcPwd = String.valueOf(vcPwdCh);
 
-                VcConnector vcConnector = new VcConnector();
-                vcConnector.setAddress("https://"+vcAddress+"/sdk/");
-                vcConnector.setUsername(username);
-                vcConnector.setPassword(vcPwd);
-
+                VcConnection vcConnection = null;
                 try {
-                    VimPortType vimPort = vcConnector.login();
+                    vcConnection = new VcConnection("https://"+vcAddress+"/sdk/",username,vcPwd);
                     appUi.setVisible(false);
-
-                    ManagedObjectReference serviceInstance = new ManagedObjectReference();
-                    serviceInstance.setType("ServiceInstance");
-                    serviceInstance.setValue("ServiceInstance");
-                    ServiceContent serviceContent = vimPort.retrieveServiceContent(serviceInstance);
-                    MainView mainView = new MainView();
-                    mainView.setVimPort(vimPort);
-                    mainView.setServiceContent(serviceContent);
+                    MainView mainView = new MainView(vcConnection);
                     mainView.createUI();
 
-                }  catch (KeyManagementException keyManagementException) {
-                    keyManagementException.printStackTrace();
-                } catch (NoSuchAlgorithmException noSuchAlgorithmException) {
-                    noSuchAlgorithmException.printStackTrace();
-                } catch (InvalidLocaleFaultMsg invalidLocaleFaultMsg) {
-                    invalidLocaleFaultMsg.printStackTrace();
+                } catch (RuntimeFaultFaultMsg runtimeFaultFaultMsg) {
+                    runtimeFaultFaultMsg.printStackTrace();
                 } catch (InvalidLoginFaultMsg invalidLoginFaultMsg) {
                     statusLabel.setText("Invalid username or password");
                     invalidLoginFaultMsg.printStackTrace();
-                } catch (RuntimeFaultFaultMsg runtimeFaultFaultMsg) {
-                    runtimeFaultFaultMsg.printStackTrace();
+                } catch (InvalidLocaleFaultMsg invalidLocaleFaultMsg) {
+                    invalidLocaleFaultMsg.printStackTrace();
+                } catch (KeyManagementException keyManagementException) {
+                    keyManagementException.printStackTrace();
+                } catch (NoSuchAlgorithmException noSuchAlgorithmException) {
+                    noSuchAlgorithmException.printStackTrace();
                 }
             }
         });

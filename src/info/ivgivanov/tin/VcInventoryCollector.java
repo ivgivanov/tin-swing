@@ -5,10 +5,25 @@ import com.vmware.vim25.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VcInvenotryCollector {
+public class VcInventoryCollector {
+    private VcConnection vcConnection;
 
-    public List<String> getClusterNames(VimPortType vimPort, ServiceContent serviceContent) {
+    private VcConnection getVcConnection() {
+        return vcConnection;
+    }
 
+    private void setVcConnection(VcConnection vcConnection) {
+        this.vcConnection = vcConnection;
+    }
+
+    public VcInventoryCollector(VcConnection vcConnection) {
+        this.setVcConnection(vcConnection);
+    }
+
+    public List<String> getClusterNames() {
+
+        VimPortType vimPort = this.vcConnection.getVimPort();
+        ServiceContent serviceContent = this.vcConnection.getServiceContent();
         List<String> clusterNames = new ArrayList<String>();
         ManagedObjectReference propertyCollector = serviceContent.getPropertyCollector();
 

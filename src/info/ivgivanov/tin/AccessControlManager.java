@@ -6,10 +6,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AccessControlManager {
+    private VcConnection vcConnection;
 
-    public List<AuthorizationRole> getRoles(VimPortType vimPort, ServiceContent serviceContent)
+    private VcConnection getVcConnection() {
+        return vcConnection;
+    }
+
+    private void setVcConnection(VcConnection vcConnection) {
+        this.vcConnection = vcConnection;
+    }
+
+    public AccessControlManager (VcConnection vcConnection) {
+        this.setVcConnection(vcConnection);
+    }
+    public List<AuthorizationRole> getRoles()
             throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
 
+        VimPortType vimPort = this.getVcConnection().getVimPort();
+        ServiceContent serviceContent = this.getVcConnection().getServiceContent();
         List<AuthorizationRole> authRoles = new ArrayList<AuthorizationRole>();
 
         ManagedObjectReference authManager = serviceContent.getAuthorizationManager();
