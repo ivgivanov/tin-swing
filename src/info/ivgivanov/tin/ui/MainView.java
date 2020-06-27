@@ -33,6 +33,11 @@ public class MainView {
         executeMethod.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                if (executeMethod.getText().equals("Copy to...")) {
+
+                    VcConnectionCopyRole vcConnectionCopyRole = new VcConnectionCopyRole();
+
+                }
             }
         });
         actionsList.addActionListener(new ActionListener() {
@@ -76,6 +81,8 @@ public class MainView {
                 vcRoles.setVisible(true);
             }
         });
+
+        createUI();
     }
 
     public JFrame createUI() {
