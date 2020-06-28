@@ -29,17 +29,32 @@ public class MainView {
     }
 
     public MainView(VcConnection vcConnection) {
+        List<AuthorizationRole> roles=null;
+        AccessControlManager acm = new AccessControlManager(vcConnection);
+        try {
+            roles = acm.getRoles();
+        } catch (InvalidPropertyFaultMsg invalidPropertyFaultMsg) {
+            invalidPropertyFaultMsg.printStackTrace();
+        } catch (RuntimeFaultFaultMsg runtimeFaultFaultMsg) {
+            runtimeFaultFaultMsg.printStackTrace();
+        }
         this.setVcConnection(vcConnection);
+        List<AuthorizationRole> finalRoles = roles;
         executeMethod.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (executeMethod.getText().equals("Copy to...")) {
 
-                    VcConnectionCopyRole vcConnectionCopyRole = new VcConnectionCopyRole();
-
+                    for (AuthorizationRole role : finalRoles) {
+                        if (role.getName().equals((String)vcRoles.getSelectedValue())){
+                            VcConnectionCopyRole vcConnectionCopyRole = new VcConnectionCopyRole(role);
+                            break;
+                        }
+                    }
                 }
             }
         });
+        List<AuthorizationRole> finalRoles1 = roles;
         actionsList.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -48,16 +63,8 @@ public class MainView {
                     case "Copy vCenter Role":
                         ((DefaultListModel)vcRoles.getModel()).clear();
                         executeMethod.setVisible(false);
-                        AccessControlManager acm = new AccessControlManager(vcConnection);
-                        try {
-                            List<AuthorizationRole> roles = acm.getRoles();
-                            for (AuthorizationRole role : roles) {
-                                ((DefaultListModel)vcRoles.getModel()).addElement(role.getName());
-                            }
-                        } catch (InvalidPropertyFaultMsg invalidPropertyFaultMsg) {
-                            invalidPropertyFaultMsg.printStackTrace();
-                        } catch (RuntimeFaultFaultMsg runtimeFaultFaultMsg) {
-                            runtimeFaultFaultMsg.printStackTrace();
+                        for (AuthorizationRole role : finalRoles1) {
+                            ((DefaultListModel)vcRoles.getModel()).addElement(role.getName());
                         }
                         executeMethod.setText("Copy to...");
                         executeMethod.setVisible(true);

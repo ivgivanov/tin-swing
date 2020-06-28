@@ -1,6 +1,7 @@
 package info.ivgivanov.tin;
 
 import com.vmware.vim25.*;
+import sun.lwawt.macosx.CSystemTray;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,5 +57,23 @@ public class AccessControlManager {
         }
 
         return authRoles;
+    }
+
+    public int createRole(AuthorizationRole role) {
+        int roleId = 0;
+        try {
+            roleId = vcConnection.getVimPort().addAuthorizationRole(vcConnection.getServiceContent().getAuthorizationManager(), role.getName(), role.getPrivilege());
+            return roleId;
+        } catch (AlreadyExistsFaultMsg e) {
+            System.out.println("Role with this name already exists");
+            // e.printStackTrace();
+        } catch (InvalidNameFaultMsg e) {
+            System.out.println("Invalid role name");
+            // e.printStackTrace();
+        } catch (RuntimeFaultFaultMsg e) {
+            System.out.println("An error occured");
+            // e.printStackTrace();
+        }
+        return roleId;
     }
 }
