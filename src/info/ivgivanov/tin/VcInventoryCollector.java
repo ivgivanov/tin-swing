@@ -57,14 +57,127 @@ public class VcInventoryCollector {
 
         if (result != null) {
             for (ObjectContent objectContent : result.getObjects()) {
+
+
+                System.out.println("First for");
+                System.out.println(objectContent.getObj().getValue());
                 List<DynamicProperty> properties = objectContent.getPropSet();
                 for (DynamicProperty property : properties) {
+                    System.out.println("Second for");
                     System.out.println(property.getName() + ": " + property.getVal());
                     clusterNames.add((String)property.getVal());
                 }
             }
         }
         return  clusterNames;
+    }
+
+
+    public List<Cluster> getClusters() {
+
+        VimPortType vimPort = this.vcConnection.getVimPort();
+        ServiceContent serviceContent = this.vcConnection.getServiceContent();
+        List<Cluster> clusters = new ArrayList<Cluster>();
+
+        ManagedObjectReference propertyCollector = serviceContent.getPropertyCollector();
+
+        ObjectSpec objectSpec = new ObjectSpec();
+        objectSpec.setObj(serviceContent.getRootFolder());
+        objectSpec.getSelectSet().addAll(buildFullTraversal());
+        objectSpec.setSkip(false);
+
+        PropertySpec propertySpecCluster = new PropertySpec();
+        propertySpecCluster.setType("ClusterComputeResource");
+        propertySpecCluster.getPathSet().add("name");
+        propertySpecCluster.getPathSet().add("host");
+        propertySpecCluster.setAll(false);
+
+        PropertyFilterSpec propertyFilterSpec = new PropertyFilterSpec();
+        propertyFilterSpec.getObjectSet().add(objectSpec);
+        propertyFilterSpec.getPropSet().add(propertySpecCluster);
+
+        List<PropertyFilterSpec> propertyFilterSpecList = new ArrayList<PropertyFilterSpec>();
+        propertyFilterSpecList.add(propertyFilterSpec);
+
+        RetrieveOptions retrieveOptions = new RetrieveOptions();
+
+        RetrieveResult result = null;
+        try {
+            result = vimPort.retrievePropertiesEx(propertyCollector, propertyFilterSpecList, retrieveOptions);
+        } catch (InvalidPropertyFaultMsg invalidPropertyFaultMsg) {
+            invalidPropertyFaultMsg.printStackTrace();
+        } catch (RuntimeFaultFaultMsg runtimeFaultFaultMsg) {
+            runtimeFaultFaultMsg.printStackTrace();
+        }
+
+        if (result != null) {
+            for (ObjectContent objectContent : result.getObjects()) {
+                Cluster cluster = new Cluster();
+                cluster.setMoref(objectContent.getObj());
+                //System.out.println("Cluster id: "+objectContent.getObj().getValue());
+                List<DynamicProperty> properties = objectContent.getPropSet();
+                for (DynamicProperty property : properties) {
+                    if (property.getName().equals("name")) {
+                        //System.out.println("Cluster name: "+property.getVal());
+                        cluster.setName((String) property.getVal());
+                    } else if (property.getName().equals("host")) {
+                        List<HostSystem> hosts = new ArrayList<HostSystem>();
+                        ArrayOfManagedObjectReference hostsMorefs = (ArrayOfManagedObjectReference)property.getVal();
+                        if (hostsMorefs.getManagedObjectReference().size() >0) {
+                            //System.out.println("Cluster hosts:");
+                            for (ManagedObjectReference moref : hostsMorefs.getManagedObjectReference()) {
+                                //System.out.println(moref.getValue());
+                                HostSystem host = new HostSystem();
+                                host.setMoref(moref);
+                                //hosts.add(host);
+                                ///// to be refactored
+                                ObjectSpec objectSpecHost = new ObjectSpec();
+                                objectSpecHost.setObj(host.getMoref());
+                                objectSpecHost.setSkip(false);
+
+                                PropertySpec propertySpecHost = new PropertySpec();
+                                propertySpecHost.setType("HostSystem");
+                                propertySpecHost.getPathSet().add("name");
+                                propertySpecHost.setAll(false);
+
+                                PropertyFilterSpec propertyFilterSpecHost = new PropertyFilterSpec();
+                                propertyFilterSpecHost.getObjectSet().add(objectSpecHost);
+                                propertyFilterSpecHost.getPropSet().add(propertySpecHost);
+
+                                List<PropertyFilterSpec> propertyFilterSpecListHost = new ArrayList<PropertyFilterSpec>();
+                                propertyFilterSpecListHost.add(propertyFilterSpecHost);
+
+                                RetrieveResult hostResult = null;
+                                try {
+                                    hostResult = vimPort.retrievePropertiesEx(propertyCollector, propertyFilterSpecListHost, retrieveOptions);
+                                } catch (InvalidPropertyFaultMsg invalidPropertyFaultMsg) {
+                                    invalidPropertyFaultMsg.printStackTrace();
+                                } catch (RuntimeFaultFaultMsg runtimeFaultFaultMsg) {
+                                    runtimeFaultFaultMsg.printStackTrace();
+                                }
+
+                                if (hostResult != null) {
+                                    for (ObjectContent objectContentHost : hostResult.getObjects()) {
+                                        List<DynamicProperty> hostProperties = objectContentHost.getPropSet();
+                                        for (DynamicProperty hostProperty : hostProperties) {
+                                            host.setName((String)hostProperty.getVal());
+                                        }
+                                    }
+                                }
+
+                                ////
+                                //System.out.println("---- "+host.getName());
+                                hosts.add(host);
+                            }
+                        }
+                        cluster.setHosts(hosts);
+                    }
+                }
+                clusters.add(cluster);
+            }
+        }
+
+        return  clusters;
     }
 
 

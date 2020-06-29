@@ -1,9 +1,7 @@
 package info.ivgivanov.tin.ui;
 
 import com.vmware.vim25.*;
-import info.ivgivanov.tin.AccessControlManager;
-import info.ivgivanov.tin.VcConnection;
-import info.ivgivanov.tin.VcInventoryCollector;
+import info.ivgivanov.tin.*;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -38,6 +36,9 @@ public class MainView {
         } catch (RuntimeFaultFaultMsg runtimeFaultFaultMsg) {
             runtimeFaultFaultMsg.printStackTrace();
         }
+        VcInventoryCollector vcInventoryCollector = new VcInventoryCollector(vcConnection);
+        List<Cluster> clusters = vcInventoryCollector.getClusters();
+
         this.setVcConnection(vcConnection);
         List<AuthorizationRole> finalRoles = roles;
         executeMethod.addActionListener(new ActionListener() {
@@ -51,6 +52,26 @@ public class MainView {
                             break;
                         }
                     }
+                } else if (executeMethod.getText().equals("Check vMotion...")) {
+
+                    Cluster selectedCluster = null;
+                    for (Cluster cluster : clusters) {
+                        if (cluster.getName().equals((String)vcRoles.getSelectedValue())) {
+                            selectedCluster = cluster;
+                            break;
+                        }
+                    }
+
+                    System.out.println("Selected cluster name: "+selectedCluster.getName());
+                    System.out.println("Cluster MoRef: "+selectedCluster.getMoref().getValue());
+                    System.out.println("Hosts count: "+selectedCluster.getHosts().size());
+                    if (selectedCluster.getHosts().size() > 0) {
+                        System.out.println("Hosts:");
+                        for (HostSystem host : selectedCluster.getHosts()) {
+                            System.out.println("---> "+host.getName());
+                        }
+                    }
+
                 }
             }
         });
@@ -72,9 +93,9 @@ public class MainView {
                     case "Check vMotion Compatibility":
                         ((DefaultListModel)vcRoles.getModel()).clear();
                         executeMethod.setVisible(false);
-                        VcInventoryCollector vcInventoryCollector = new VcInventoryCollector(vcConnection);
-                        for  (String clusterName : vcInventoryCollector.getClusterNames()) {
-                            ((DefaultListModel)vcRoles.getModel()).addElement(clusterName);
+                        //VcInventoryCollector vcInventoryCollector = new VcInventoryCollector(vcConnection);
+                        for  (Cluster cluster : clusters) {
+                            ((DefaultListModel)vcRoles.getModel()).addElement(cluster.getName());
                         }
                         executeMethod.setText("Check vMotion...");
                         executeMethod.setVisible(true);
