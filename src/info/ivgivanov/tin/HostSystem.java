@@ -8,6 +8,7 @@ public class HostSystem {
 
     private String name;
     private ManagedObjectReference moref;
+    private List<VirtualMachine> vms;
 
     public String getName() {
         return name;
@@ -25,4 +26,11 @@ public class HostSystem {
         this.moref = moref;
     }
 
+    public List<VirtualMachine> getVms() {
+        return vms;
+    }
+
+    public void setVms(List<VirtualMachine> vms) {
+        this.vms = vms;
+    }
 }

@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.ArrayList;
 import java.util.List;
 
 public class MainView {
@@ -62,16 +63,44 @@ public class MainView {
                         }
                     }
 
+                    List<ManagedObjectReference> listVms = new ArrayList<ManagedObjectReference>();
+                    List<ManagedObjectReference> listHosts = new ArrayList<ManagedObjectReference>();
+
                     System.out.println("Selected cluster name: "+selectedCluster.getName());
                     System.out.println("Cluster MoRef: "+selectedCluster.getMoref().getValue());
                     System.out.println("Hosts count: "+selectedCluster.getHosts().size());
                     if (selectedCluster.getHosts().size() > 0) {
                         System.out.println("Hosts:");
                         for (HostSystem host : selectedCluster.getHosts()) {
+                            listHosts.add(host.getMoref());
                             System.out.println("---> "+host.getName());
+                            if (host.getVms().size() > 0) {
+                                System.out.println("VMs:");
+                                for (VirtualMachine vm : host.getVms()) {
+                                    listVms.add(vm.getMoref());
+                                    System.out.println("-------> "+vm.getMoref().getValue());
+                                }
+                            } else {
+                                System.out.println("VMs: 0");
+                            }
                         }
                     }
 
+                    //// check vMotion
+
+                    System.out.println("Checking vMotion compatibility for "+listHosts.size() + " hosts and "+listVms.size()+" VMs");
+                    VimPortType vimPort = vcConnection.getVimPort();
+                    ServiceContent serviceContent = vcConnection.getServiceContent();
+
+                    ManagedObjectReference vmProvChecker = serviceContent.getVmProvisioningChecker();
+
+                    try {
+                        ManagedObjectReference task = vimPort.queryVMotionCompatibilityExTask(vmProvChecker,listHosts, listVms);
+                        System.out.println(task.getValue());
+
+                    } catch (RuntimeFaultFaultMsg runtimeFaultFaultMsg) {
+                        runtimeFaultFaultMsg.printStackTrace();
+                    }
                 }
             }
         });

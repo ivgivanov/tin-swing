@@ -123,7 +123,7 @@ public class VcInventoryCollector {
                     } else if (property.getName().equals("host")) {
                         List<HostSystem> hosts = new ArrayList<HostSystem>();
                         ArrayOfManagedObjectReference hostsMorefs = (ArrayOfManagedObjectReference)property.getVal();
-                        if (hostsMorefs.getManagedObjectReference().size() >0) {
+                        if (hostsMorefs.getManagedObjectReference().size() > 0) {
                             //System.out.println("Cluster hosts:");
                             for (ManagedObjectReference moref : hostsMorefs.getManagedObjectReference()) {
                                 //System.out.println(moref.getValue());
@@ -138,6 +138,7 @@ public class VcInventoryCollector {
                                 PropertySpec propertySpecHost = new PropertySpec();
                                 propertySpecHost.setType("HostSystem");
                                 propertySpecHost.getPathSet().add("name");
+                                propertySpecHost.getPathSet().add("vm");
                                 propertySpecHost.setAll(false);
 
                                 PropertyFilterSpec propertyFilterSpecHost = new PropertyFilterSpec();
@@ -160,7 +161,20 @@ public class VcInventoryCollector {
                                     for (ObjectContent objectContentHost : hostResult.getObjects()) {
                                         List<DynamicProperty> hostProperties = objectContentHost.getPropSet();
                                         for (DynamicProperty hostProperty : hostProperties) {
-                                            host.setName((String)hostProperty.getVal());
+                                            if (hostProperty.getName().equals("name")) {
+                                                host.setName((String)hostProperty.getVal());
+                                            } else if (hostProperty.getName().equals("vm")) {
+                                                List<VirtualMachine> vms = new ArrayList<VirtualMachine>();
+                                                ArrayOfManagedObjectReference vmMorefs = (ArrayOfManagedObjectReference)hostProperty.getVal();
+                                                if (vmMorefs.getManagedObjectReference().size() > 0) {
+                                                    for (ManagedObjectReference vmMoref : vmMorefs.getManagedObjectReference()) {
+                                                        VirtualMachine vm = new VirtualMachine();
+                                                        vm.setMoref(vmMoref);
+                                                        vms.add(vm);
+                                                    }
+                                                }
+                                                host.setVms(vms);
+                                            }
                                         }
                                     }
                                 }
