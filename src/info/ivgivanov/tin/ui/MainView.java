@@ -8,8 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class MainView {
     private VcConnection vcConnection;
@@ -18,6 +17,7 @@ public class MainView {
     private JComboBox actionsList;
     private JButton executeMethod;
     private JList vcRoles;
+    private JLabel vmotinStatus;
 
     public VcConnection getVcConnection() {
         return vcConnection;
@@ -88,6 +88,20 @@ public class MainView {
 
                     //// check vMotion
 
+
+                    ManagedObjectReference myVm = new ManagedObjectReference();
+                    myVm.setType("VirtualMachine");
+                    myVm.setValue("vm-16");
+
+                    ManagedObjectReference myHost = new ManagedObjectReference();
+                    myHost.setType("HostSystem");
+                    myHost.setValue("host-10");
+
+                    List<ManagedObjectReference> vmList = new ArrayList<ManagedObjectReference>();
+                    vmList.add(myVm);
+                    List<ManagedObjectReference> hostList = new ArrayList<ManagedObjectReference>();
+                    hostList.add(myHost);
+
                     System.out.println("Checking vMotion compatibility for "+listHosts.size() + " hosts and "+listVms.size()+" VMs");
                     VimPortType vimPort = vcConnection.getVimPort();
                     ServiceContent serviceContent = vcConnection.getServiceContent();
@@ -95,10 +109,59 @@ public class MainView {
                     ManagedObjectReference vmProvChecker = serviceContent.getVmProvisioningChecker();
 
                     try {
-                        ManagedObjectReference task = vimPort.queryVMotionCompatibilityExTask(vmProvChecker,listHosts, listVms);
+                        ManagedObjectReference task = vimPort.queryVMotionCompatibilityExTask(vmProvChecker, listVms, listHosts);
                         System.out.println(task.getValue());
 
-                    } catch (RuntimeFaultFaultMsg runtimeFaultFaultMsg) {
+                        ManagedObjectReference propertyCollector = serviceContent.getPropertyCollector();
+
+                        ObjectSpec objectSpec = new ObjectSpec();
+                        objectSpec.setObj(task);
+                        objectSpec.setSkip(false);
+
+                        PropertySpec propertySpecCluster = new PropertySpec();
+                        propertySpecCluster.setType("Task");
+                        propertySpecCluster.getPathSet().add("info");
+                        propertySpecCluster.setAll(false);
+
+                        PropertyFilterSpec propertyFilterSpec = new PropertyFilterSpec();
+                        propertyFilterSpec.getObjectSet().add(objectSpec);
+                        propertyFilterSpec.getPropSet().add(propertySpecCluster);
+
+                        List<PropertyFilterSpec> propertyFilterSpecList = new ArrayList<PropertyFilterSpec>();
+                        propertyFilterSpecList.add(propertyFilterSpec);
+
+                        RetrieveOptions retrieveOptions = new RetrieveOptions();
+
+                        RetrieveResult result = vimPort.retrievePropertiesEx(propertyCollector, propertyFilterSpecList, retrieveOptions);
+
+                        Set<String> problematicVms = new HashSet<String>();
+
+                        if (result != null) {
+                            for (ObjectContent objectContent : result.getObjects()) {
+                                List<DynamicProperty> properties = objectContent.getPropSet();
+                                for (DynamicProperty property : properties) {
+                                    TaskInfo taskInfo = (TaskInfo)property.getVal();
+                                    System.out.println(taskInfo.getState().value());
+                                    ArrayOfCheckResult checkRes = (ArrayOfCheckResult) taskInfo.getResult();
+                                    for (CheckResult checkResult : checkRes.getCheckResult()) {
+                                        if (checkResult.getError().size() > 0) {
+                                            problematicVms.add(checkResult.getVm().getValue());
+                                            System.out.println("Unable to vMotion VM "+checkResult.getVm().getValue()+" to host "+checkResult.getHost().getValue());
+                                            System.out.println("Reasons:");
+                                            for (LocalizedMethodFault error : checkResult.getError()) {
+                                                System.out.println(error.getLocalizedMessage());
+                                            }
+                                        }
+                                    }
+
+                                    System.out.println("vMotion not possible for VMs: "+problematicVms);
+                                    vmotinStatus.setText("<html>vMotion not possible for:<br/>"+String.join("<br/>",problematicVms)+"</html>");
+                                    vmotinStatus.setVisible(true);
+                                }
+                            }
+                        }
+
+                    } catch (RuntimeFaultFaultMsg | InvalidPropertyFaultMsg runtimeFaultFaultMsg) {
                         runtimeFaultFaultMsg.printStackTrace();
                     }
                 }
@@ -113,6 +176,7 @@ public class MainView {
                     case "Copy vCenter Role":
                         ((DefaultListModel)vcRoles.getModel()).clear();
                         executeMethod.setVisible(false);
+                        vmotinStatus.setVisible(false);
                         for (AuthorizationRole role : finalRoles1) {
                             ((DefaultListModel)vcRoles.getModel()).addElement(role.getName());
                         }
@@ -122,6 +186,7 @@ public class MainView {
                     case "Check vMotion Compatibility":
                         ((DefaultListModel)vcRoles.getModel()).clear();
                         executeMethod.setVisible(false);
+                        vmotinStatus.setVisible(false);
                         //VcInventoryCollector vcInventoryCollector = new VcInventoryCollector(vcConnection);
                         for  (Cluster cluster : clusters) {
                             ((DefaultListModel)vcRoles.getModel()).addElement(cluster.getName());
@@ -150,6 +215,7 @@ public class MainView {
 
         executeMethod.setVisible(false);
         vcRoles.setVisible(false);
+        vmotinStatus.setVisible(false);
 
         actionsList.addItem("Copy vCenter Role");
         actionsList.addItem("Check vMotion Compatibility");
